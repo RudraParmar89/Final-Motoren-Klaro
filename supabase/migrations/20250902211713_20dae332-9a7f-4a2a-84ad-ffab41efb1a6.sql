@@ -1,0 +1,34 @@
+-- Final car brands: Polaris, TATA, and Kia
+
+-- Polaris Models  
+INSERT INTO cars (brand, make, model, year, price, fuel_type, transmission, body_type, engine_capacity_cc, power_bhp, torque_nm, mileage_kmpl, seating_capacity, airbags, abs_ebd_esc, hill_assist, traction_control, digital_cluster, ground_clearance_mm, boot_space_liters, warranty_years, image_url, description) VALUES
+('Polaris', 'Polaris', 'RANGER', 2024, 1850000, 'Petrol', 'Automatic', 'UTV', 999, 82, 85, 12.5, 6, 0, true, true, true, true, 330, 454, 1, '/lovable-uploads/526dc38a-25fa-40d4-b520-425b23ae0464.png', 'Utility task vehicle for work and recreation'),
+('Polaris', 'Polaris', 'RZR', 2024, 2250000, 'Petrol', 'Automatic', 'ATV', 925, 100, 91, 11.8, 4, 0, true, false, true, true, 350, 150, 1, '/lovable-uploads/526dc38a-25fa-40d4-b520-425b23ae0464.png', 'High-performance recreational off-road vehicle'),
+('Polaris', 'Polaris', 'Sportsman', 2024, 1250000, 'Petrol', 'Automatic', 'ATV', 570, 44, 51, 15.2, 2, 0, false, false, true, false, 280, 78, 1, '/lovable-uploads/526dc38a-25fa-40d4-b520-425b23ae0464.png', 'All-terrain vehicle for hunting and farming'),
+('Polaris', 'Polaris', 'GENERAL', 2024, 1950000, 'Petrol', 'Automatic', 'UTV', 999, 82, 85, 12.1, 4, 0, true, true, true, true, 320, 227, 1, '/lovable-uploads/526dc38a-25fa-40d4-b520-425b23ae0464.png', 'Recreational utility vehicle with premium features'),
+('Polaris', 'Polaris', 'XPEDITION', 2024, 2850000, 'Petrol', 'Automatic', 'UTV', 999, 82, 85, 11.5, 5, 0, true, true, true, true, 350, 340, 1, '/lovable-uploads/526dc38a-25fa-40d4-b520-425b23ae0464.png', 'Adventure-focused utility vehicle'),
+('Polaris', 'Polaris', 'Slingshot', 2024, 2950000, 'Petrol', 'Manual', 'Roadster', 1999, 178, 226, 14.2, 2, 0, true, false, true, true, 120, 142, 2, '/lovable-uploads/526dc38a-25fa-40d4-b520-425b23ae0464.png', 'Three-wheeled autocycle roadster'),
+('Polaris', 'Polaris', 'Indian Scout', 2024, 1650000, 'Petrol', 'Manual', 'Motorcycle', 1133, 100, 97, 18.5, 2, 0, true, false, false, true, 140, 0, 2, '/lovable-uploads/526dc38a-25fa-40d4-b520-425b23ae0464.png', 'Classic American cruiser motorcycle'),
+
+-- TATA Models
+('TATA', 'Tata', 'Punch', 2024, 650000, 'Petrol', 'Manual', 'SUV', 1199, 86, 113, 18.97, 5, 2, true, true, true, true, 187, 366, 3, '/lovable-uploads/526dc38a-25fa-40d4-b520-425b23ae0464.png', 'Micro SUV with robust design and safety'),
+('TATA', 'Tata', 'Nexon', 2024, 850000, 'Petrol', 'Manual', 'SUV', 1199, 120, 170, 17.57, 5, 2, true, true, true, true, 209, 350, 3, '/lovable-uploads/526dc38a-25fa-40d4-b520-425b23ae0464.png', 'Compact SUV with 5-star safety rating'),
+('TATA', 'Tata', 'Tiago', 2024, 575000, 'Petrol', 'Manual', 'Hatchback', 1199, 86, 113, 19.28, 5, 2, true, true, true, true, 165, 242, 3, '/lovable-uploads/526dc38a-25fa-40d4-b520-425b23ae0464.png', 'Stylish hatchback with modern features'),
+('TATA', 'Tata', 'Curvv', 2024, 1185000, 'Petrol', 'Manual', 'SUV', 1199, 120, 170, 17.5, 5, 6, true, true, true, true, 208, 500, 3, '/lovable-uploads/526dc38a-25fa-40d4-b520-425b23ae0464.png', 'Coupe SUV with distinctive styling'),
+('TATA', 'Tata', 'Altroz', 2024, 695000, 'Petrol', 'Manual', 'Hatchback', 1199, 86, 113, 19.05, 5, 2, true, true, true, true, 165, 345, 3, '/lovable-uploads/526dc38a-25fa-40d4-b520-425b23ae0464.png', 'Premium hatchback with gold NCAP rating'),
+('TATA', 'Tata', 'Harrier', 2024, 1650000, 'Petrol', 'Manual', 'SUV', 1956, 170, 350, 14.6, 7, 6, true, true, true, true, 205, 425, 3, '/lovable-uploads/526dc38a-25fa-40d4-b520-425b23ae0464.png', 'Full-size SUV with Land Rover derived platform'),
+('TATA', 'Tata', 'Safari', 2024, 1750000, 'Petrol', 'Manual', 'SUV', 1956, 170, 350, 14.1, 7, 6, true, true, true, true, 205, 447, 3, '/lovable-uploads/526dc38a-25fa-40d4-b520-425b23ae0464.png', '7-seater SUV with commanding presence'),
+('TATA', 'Tata', 'Tigor', 2024, 625000, 'Petrol', 'Manual', 'Sedan', 1199, 86, 113, 19.44, 5, 2, true, true, true, true, 165, 419, 3, '/lovable-uploads/526dc38a-25fa-40d4-b520-425b23ae0464.png', 'Compact sedan with stylish design'),
+('TATA', 'Tata', 'Tiago EV', 2024, 875000, 'Electric', 'Automatic', 'Hatchback', 0, 75, 170, 0, 5, 2, true, true, true, true, 165, 242, 5, '/lovable-uploads/526dc38a-25fa-40d4-b520-425b23ae0464.png', 'Electric hatchback with 315km range'),
+('TATA', 'Tata', 'Nexon EV', 2024, 1650000, 'Electric', 'Automatic', 'SUV', 0, 143, 250, 0, 5, 2, true, true, true, true, 209, 350, 5, '/lovable-uploads/526dc38a-25fa-40d4-b520-425b23ae0464.png', 'Electric SUV with 465km range'),
+('TATA', 'Tata', 'Punch EV', 2024, 1285000, 'Electric', 'Automatic', 'SUV', 0, 120, 190, 0, 5, 2, true, true, true, true, 187, 366, 5, '/lovable-uploads/526dc38a-25fa-40d4-b520-425b23ae0464.png', 'Electric micro SUV with 421km range'),
+('TATA', 'Tata', 'Curvv EV', 2024, 1985000, 'Electric', 'Automatic', 'SUV', 0, 167, 215, 0, 5, 6, true, true, true, true, 208, 500, 5, '/lovable-uploads/526dc38a-25fa-40d4-b520-425b23ae0464.png', 'Electric coupe SUV with 585km range'),
+
+-- Kia Models  
+('Kia', 'Kia', 'Seltos', 2024, 1185000, 'Petrol', 'Manual', 'SUV', 1497, 115, 144, 16.8, 5, 6, true, true, true, true, 190, 433, 3, '/lovable-uploads/526dc38a-25fa-40d4-b520-425b23ae0464.png', 'Compact SUV with bold design and features'),
+('Kia', 'Kia', 'Sonet', 2024, 795000, 'Petrol', 'Manual', 'SUV', 998, 83, 115, 18.4, 5, 6, true, true, true, true, 205, 392, 3, '/lovable-uploads/526dc38a-25fa-40d4-b520-425b23ae0464.png', 'Sub-compact SUV with premium features'),
+('Kia', 'Kia', 'Carens', 2024, 1050000, 'Petrol', 'Manual', 'MPV', 1497, 115, 144, 16.2, 7, 6, true, true, true, true, 205, 216, 3, '/lovable-uploads/526dc38a-25fa-40d4-b520-425b23ae0464.png', '6/7-seater MPV with recreational vehicle design'),
+('Kia', 'Kia', 'Syros', 2025, 850000, 'Petrol', 'Manual', 'SUV', 998, 83, 115, 18.2, 5, 6, true, true, true, true, 195, 465, 3, '/lovable-uploads/526dc38a-25fa-40d4-b520-425b23ae0464.png', 'New sub-compact SUV with advanced safety'),
+('Kia', 'Kia', 'Carnival', 2024, 2650000, 'Diesel', 'Automatic', 'MPV', 2199, 200, 440, 14.1, 8, 6, true, true, true, true, 180, 540, 3, '/lovable-uploads/526dc38a-25fa-40d4-b520-425b23ae0464.png', 'Premium 8-seater MPV with luxury features'),
+('Kia', 'Kia', 'EV6', 2024, 6595000, 'Electric', 'Automatic', 'SUV', 0, 229, 350, 0, 5, 8, true, true, true, true, 155, 520, 5, '/lovable-uploads/526dc38a-25fa-40d4-b520-425b23ae0464.png', 'Electric SUV with 708km range and fast charging'),
+('Kia', 'Kia', 'EV9', 2024, 12500000, 'Electric', 'Automatic', 'SUV', 0, 379, 700, 0, 7, 8, true, true, true, true, 190, 828, 5, '/lovable-uploads/526dc38a-25fa-40d4-b520-425b23ae0464.png', 'Large electric SUV with 561km range');
