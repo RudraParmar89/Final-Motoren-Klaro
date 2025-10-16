@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +9,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from "@/components/ui/badge";
 import { Plus, Edit, Trash2, Search } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, SUPABASE_FUNCTIONS_URL } from "@/integrations/supabase/client";
+import { resolveImageUrl } from '@/lib/imageUtils';
+import { formatPrice } from '@/lib/formatPrice';
+import { getRepresentativeImages } from '@/components/CarImageCarousel';
 
 interface Car {
   id: string;
@@ -20,6 +23,7 @@ interface Car {
   price: number;
   fuel_type: string;
   image_url?: string;
+  images?: string[];
   power_bhp?: number;
   mileage_kmpl?: number;
   description?: string;
@@ -31,6 +35,10 @@ export const CarManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingCar, setEditingCar] = useState<Car | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [lastSupabaseResponse, setLastSupabaseResponse] = useState<any>(null);
+  // recently updated IDs to briefly highlight changed cards
+  const [recentlyUpdatedIds, setRecentlyUpdatedIds] = useState<Set<string>>(new Set());
   const [formData, setFormData] = useState({
     brand: '',
     make: '',
@@ -46,9 +54,53 @@ export const CarManagement = () => {
     description: ''
   });
   const { toast } = useToast();
+  const broadcastChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
   useEffect(() => {
     fetchCars();
+
+    // Subscribe to realtime changes for cars so admin list stays in sync
+    const channel = supabase
+      .channel('public:cars')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'cars' }, (payload) => {
+        try {
+          const newRow = (payload as any).new;
+          const oldRow = (payload as any).old;
+          const eventType = (payload as any).eventType || (payload as any).event;
+
+          if (eventType === 'INSERT') {
+            setCars(prev => prev.filter(c => c.id !== newRow.id));
+            setCars(prev => [newRow, ...prev]);
+          } else if (eventType === 'UPDATE') {
+            setCars(prev => prev.map(c => (c.id === newRow.id ? newRow : c)));
+          } else if (eventType === 'DELETE') {
+            setCars(prev => prev.filter(c => c.id !== oldRow.id));
+          }
+        } catch (err) {
+          console.warn('Realtime payload handling error (admin):', err);
+        }
+      })
+      .subscribe();
+
+    return () => {
+      try {
+        channel.unsubscribe();
+      } catch (err) {
+        // ignore
+      }
+    };
+  }, []);
+
+  // Establish a broadcast channel once so we can reliably send events
+  useEffect(() => {
+    const ch = supabase
+      .channel('cars-updates')
+      .subscribe();
+    broadcastChannelRef.current = ch;
+    return () => {
+      try { ch.unsubscribe(); } catch (e) {}
+      broadcastChannelRef.current = null;
+    };
   }, []);
 
   const fetchCars = async () => {
@@ -74,60 +126,214 @@ export const CarManagement = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+    setIsSaving(true);
     try {
+      // sanitize and normalize payload to avoid sending NaN or empty strings
+      const buildPayload = (data: any) => {
+        const toNumber = (v: any) => {
+          const n = Number(v);
+          return Number.isFinite(n) ? n : null;
+        };
+
+        const payload: any = {
+          brand: data.brand || null,
+          make: data.make || null,
+          model: data.model || null,
+          year: toNumber(data.year),
+          price: toNumber(data.price),
+          fuel_type: data.fuel_type || null,
+          body_type: data.body_type || null,
+          transmission: data.transmission || null,
+          image_url: data.image_url || null,
+          power_bhp: toNumber(data.power_bhp),
+          mileage_kmpl: toNumber(data.mileage_kmpl),
+          description: data.description || null,
+        };
+
+        return payload;
+      };
+
+      const payload = buildPayload(formData);
+
       if (editingCar) {
-        const { error } = await supabase
-          .from('cars')
-          .update(formData)
-          .eq('id', editingCar.id);
+        // optimistic update locally
+        const updatedLocal = { ...editingCar, ...payload } as Car;
+        setCars(prev => prev.map(c => (c.id === editingCar.id ? updatedLocal : c)));
 
-        if (error) throw error;
-        toast({ title: "Success", description: "Car updated successfully." });
+        // send update and use returned row to keep canonical state
+        let serverRow: any = null;
+        if (SUPABASE_FUNCTIONS_URL) {
+          // call edge function
+          const resp = await fetch(`${SUPABASE_FUNCTIONS_URL}/admin-save-car`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'update', id: editingCar.id, payload }),
+          });
+          const result = await resp.json();
+          console.debug('Function update response:', result);
+          setLastSupabaseResponse(result);
+          if (!resp.ok) throw new Error(result?.error || JSON.stringify(result));
+          const returned = result.data;
+          serverRow = Array.isArray(returned) ? returned[0] : returned;
+        } else {
+          const res = await supabase
+            .from('cars')
+            .update(payload)
+            .eq('id', editingCar.id)
+            .select();
+          console.debug('Supabase update response:', res);
+          setLastSupabaseResponse(res);
+          if (res.error) throw res.error;
+          const returned = res.data as any;
+          serverRow = Array.isArray(returned) ? returned[0] : returned;
+        }
+
+        if (serverRow) {
+          // replace local with server-returned row
+          setCars(prev => prev.map(c => (c.id === serverRow.id ? serverRow : c)));
+          // double-check canonical row from DB to avoid stale values from function
+          try {
+            const { data: fresh } = await supabase
+              .from('cars')
+              .select('*')
+              .eq('id', serverRow.id)
+              .single();
+            if (fresh) {
+              setCars(prev => prev.map(c => (c.id === fresh.id ? fresh : c)));
+            }
+          } catch (_) {}
+          markRecentlyUpdated(serverRow.id);
+          toast({ title: "Success", description: "Car updated successfully." });
+          try { await broadcastChannelRef.current?.send({ type: 'broadcast', event: 'cars-updated', payload: { id: serverRow.id, action: 'update' } }); } catch (e) {}
+          try { localStorage.setItem('cars_updated_at', String(Date.now())); } catch (e) {}
+        } else {
+          // Some setups (RLS / function responses) may not return the updated row.
+          // Treat a successful request as success: refetch canonical data and show success toast.
+          toast({ title: "Success", description: "Car updated successfully." });
+          await fetchCars();
+          try { await broadcastChannelRef.current?.send({ type: 'broadcast', event: 'cars-updated', payload: { action: 'update' } }); } catch (e) {}
+          try { localStorage.setItem('cars_updated_at', String(Date.now())); } catch (e) {}
+        }
       } else {
-        const { error } = await supabase
-          .from('cars')
-          .insert([formData]);
+        // optimistic add with temporary id
+        const tempId = `temp-${Date.now()}`;
+        const tempCar: any = { id: tempId, ...payload };
+        setCars(prev => [tempCar, ...prev]);
+        markRecentlyUpdated(tempId);
 
-        if (error) throw error;
-        toast({ title: "Success", description: "Car added successfully." });
+        let serverRow: any = null;
+        if (SUPABASE_FUNCTIONS_URL) {
+          const resp = await fetch(`${SUPABASE_FUNCTIONS_URL}/admin-save-car`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'insert', payload }),
+          });
+          const result = await resp.json();
+          console.debug('Function insert response:', result);
+          setLastSupabaseResponse(result);
+          if (!resp.ok) throw new Error(result?.error || JSON.stringify(result));
+          const returned = result.data;
+          serverRow = Array.isArray(returned) ? returned[0] : returned;
+        } else {
+          const res = await supabase
+            .from('cars')
+            .insert([payload])
+            .select();
+          console.debug('Supabase insert response:', res);
+          setLastSupabaseResponse(res);
+          if (res.error) throw res.error;
+          const returned = res.data as any;
+          serverRow = Array.isArray(returned) ? returned[0] : returned;
+        }
+
+        if (serverRow) {
+          // replace temp entry with server row
+          setCars(prev => prev.map(c => (c.id === tempId ? serverRow : c)));
+          markRecentlyUpdated(serverRow.id);
+          toast({ title: "Success", description: "Car added successfully." });
+          try { await broadcastChannelRef.current?.send({ type: 'broadcast', event: 'cars-updated', payload: { id: serverRow.id, action: 'insert' } }); } catch (e) {}
+          try { localStorage.setItem('cars_updated_at', String(Date.now())); } catch (e) {}
+        } else {
+          // If server didn't return the inserted row, refetch full list and consider it success
+          toast({ title: "Success", description: "Car added successfully." });
+          await fetchCars();
+          try { await broadcastChannelRef.current?.send({ type: 'broadcast', event: 'cars-updated', payload: { action: 'insert' } }); } catch (e) {}
+          try { localStorage.setItem('cars_updated_at', String(Date.now())); } catch (e) {}
+        }
       }
 
       resetForm();
       setIsAddModalOpen(false);
       setEditingCar(null);
       fetchCars();
-    } catch (error) {
-      console.error('Error saving car:', error);
+    } catch (err) {
+      console.error('Error saving car:', err);
+      setLastSupabaseResponse(err);
+      const message = (err as any)?.message || JSON.stringify(err);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to save car.",
+        description: `Failed to save car. ${message} (See debug panel in admin for full response)`,
       });
+      // rollback by refetching
+      fetchCars();
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const handleDelete = async (carId: string) => {
     if (!confirm('Are you sure you want to delete this car?')) return;
-
+    // optimistic remove
+    const previous = cars;
+    setCars(prev => prev.filter(c => c.id !== carId));
     try {
-      const { error } = await supabase
-        .from('cars')
-        .delete()
-        .eq('id', carId);
-
-      if (error) throw error;
-      
+      if (SUPABASE_FUNCTIONS_URL) {
+        const resp = await fetch(`${SUPABASE_FUNCTIONS_URL}/admin-save-car`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'delete', id: carId })
+        });
+        if (!resp.ok) {
+          const result = await resp.json().catch(() => ({}));
+          throw new Error(result?.error || 'Failed to delete via function');
+        }
+      } else {
+        const { error } = await supabase
+          .from('cars')
+          .delete()
+          .eq('id', carId);
+        if (error) throw error;
+      }
       toast({ title: "Success", description: "Car deleted successfully." });
-      fetchCars();
-    } catch (error) {
-      console.error('Error deleting car:', error);
+      try { await broadcastChannelRef.current?.send({ type: 'broadcast', event: 'cars-updated', payload: { id: carId, action: 'delete' } }); } catch (e) {}
+      try { localStorage.setItem('cars_updated_at', String(Date.now())); } catch (e) {}
+    } catch (err) {
+      console.error('Error deleting car:', err);
       toast({
         variant: "destructive",
         title: "Error",
         description: "Failed to delete car.",
       });
+      // rollback
+      setCars(previous);
     }
+  };
+
+  const markRecentlyUpdated = (id: string) => {
+    setRecentlyUpdatedIds(prev => {
+      const copy = new Set(prev);
+      copy.add(id);
+      return copy;
+    });
+    // remove after 6s
+    setTimeout(() => {
+      setRecentlyUpdatedIds(prev => {
+        const copy = new Set(prev);
+        copy.delete(id);
+        return copy;
+      });
+    }, 6000);
   };
 
   const resetForm = () => {
@@ -172,15 +378,7 @@ export const CarManagement = () => {
     car.brand.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const formatPrice = (price: number) => {
-    if (price >= 10000000) {
-      return `₹${(price / 10000000).toFixed(1)} Cr`;
-    } else if (price >= 100000) {
-      return `₹${(price / 100000).toFixed(1)} L`;
-    } else {
-      return `₹${price.toLocaleString()}`;
-    }
-  };
+  // use shared formatPrice
 
   return (
     <div className="space-y-6">
@@ -235,7 +433,7 @@ export const CarManagement = () => {
                     id="year"
                     type="number"
                     value={formData.year}
-                    onChange={(e) => setFormData({ ...formData, year: parseInt(e.target.value) })}
+                    onChange={(e) => setFormData({ ...formData, year: e.target.value === '' ? new Date().getFullYear() : parseInt(e.target.value) })}
                     required
                   />
                 </div>
@@ -248,7 +446,7 @@ export const CarManagement = () => {
                     id="price"
                     type="number"
                     value={formData.price}
-                    onChange={(e) => setFormData({ ...formData, price: parseInt(e.target.value) })}
+                    onChange={(e) => setFormData({ ...formData, price: e.target.value === '' ? 0 : parseInt(e.target.value) })}
                     required
                   />
                 </div>
@@ -309,7 +507,7 @@ export const CarManagement = () => {
                     id="power_bhp"
                     type="number"
                     value={formData.power_bhp}
-                    onChange={(e) => setFormData({ ...formData, power_bhp: parseInt(e.target.value) })}
+                    onChange={(e) => setFormData({ ...formData, power_bhp: e.target.value === '' ? 0 : parseInt(e.target.value) })}
                   />
                 </div>
                 <div>
@@ -319,7 +517,7 @@ export const CarManagement = () => {
                     type="number"
                     step="0.1"
                     value={formData.mileage_kmpl}
-                    onChange={(e) => setFormData({ ...formData, mileage_kmpl: parseFloat(e.target.value) })}
+                    onChange={(e) => setFormData({ ...formData, mileage_kmpl: e.target.value === '' ? 0 : parseFloat(e.target.value) })}
                   />
                 </div>
               </div>
@@ -352,8 +550,8 @@ export const CarManagement = () => {
                 }}>
                   Cancel
                 </Button>
-                <Button type="submit">
-                  {editingCar ? 'Update Car' : 'Add Car'}
+                <Button type="submit" disabled={isSaving}>
+                  {isSaving ? (editingCar ? 'Updating...' : 'Adding...') : (editingCar ? 'Update Car' : 'Add Car')}
                 </Button>
               </div>
             </form>
@@ -372,7 +570,7 @@ export const CarManagement = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {isLoading ? (
+          {isLoading ? (
           Array.from({ length: 6 }).map((_, i) => (
             <Card key={i} className="animate-pulse">
               <CardContent className="p-4">
@@ -390,13 +588,27 @@ export const CarManagement = () => {
           filteredCars.map((car) => (
             <Card key={car.id} className="hover:shadow-lg transition-shadow">
               <CardContent className="p-4">
-                {car.image_url && (
-                  <img
-                    src={car.image_url}
-                    alt={`${car.make} ${car.model}`}
-                    className="w-full h-32 object-cover rounded mb-4"
-                  />
-                )}
+                {(() => {
+                  // Prefer explicit image_url, then first image from images[], then representative generated images
+                  let imageSrc = '';
+                  if (car.image_url && car.image_url.trim() !== '') {
+                    imageSrc = resolveImageUrl(car.image_url);
+                  } else if (car.images && car.images.length > 0) {
+                    // images in DB may be stored as paths like '/src/assets/...'
+                    imageSrc = resolveImageUrl(car.images[0]);
+                  } else {
+                    const reps = getRepresentativeImages(`${car.make} ${car.model}`, car.images || []);
+                    if (reps && reps.length > 0) imageSrc = reps[0];
+                  }
+
+                  return imageSrc ? (
+                    <img
+                      src={imageSrc}
+                      alt={`${car.make} ${car.model}`}
+                      className={`w-full h-32 object-cover rounded mb-4 ${recentlyUpdatedIds.has(car.id) ? 'ring-2 ring-emerald-400' : ''}`}
+                    />
+                  ) : null;
+                })()}
                 <div className="space-y-2">
                   <h3 className="font-semibold text-lg">{car.make} {car.model}</h3>
                   <div className="flex flex-wrap gap-2">
@@ -432,6 +644,21 @@ export const CarManagement = () => {
           ))
         )}
       </div>
+
+      {/* Debug panel - only show on localhost to avoid leaking sensitive info in prod */}
+      {typeof window !== 'undefined' && window.location && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') && (
+        <div className="fixed right-4 bottom-4 w-96 max-h-60 overflow-auto bg-white border rounded p-3 shadow-lg z-50">
+          <div className="flex items-center justify-between mb-2">
+            <div className="font-semibold">Debug: last Supabase response</div>
+            <button className="text-sm text-gray-500" onClick={() => setLastSupabaseResponse(null)}>Clear</button>
+          </div>
+          {lastSupabaseResponse ? (
+            <pre className="text-xs text-gray-700 whitespace-pre-wrap">{JSON.stringify(lastSupabaseResponse, null, 2)}</pre>
+          ) : (
+            <div className="text-sm text-gray-500">No response captured yet. Try saving a car.</div>
+          )}
+        </div>
+      )}
     </div>
   );
 };

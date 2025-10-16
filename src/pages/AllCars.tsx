@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -9,6 +9,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Heart, Search, Filter, Car as CarIcon } from 'lucide-react';
+import { resolveImageUrl } from '@/lib/imageUtils';
+import { getRepresentativeImages } from '@/components/CarImageCarousel';
+import { formatPrice } from '@/lib/formatPrice';
 import PageLayout from '@/components/PageLayout';
 import SEO from '@/components/SEO';
 import { CarComparison } from '@/components/CarComparison';
@@ -26,9 +29,11 @@ interface Car {
   power_bhp?: number;
   mileage_kmpl?: number;
   image_url?: string;
+  images?: string[];
 }
 
 const AllCars = () => {
+  const navigate = useNavigate();
   const [cars, setCars] = useState<Car[]>([]);
   const [filteredCars, setFilteredCars] = useState<Car[]>([]);
   const [loading, setLoading] = useState(true);
@@ -45,6 +50,7 @@ const AllCars = () => {
   const [availableBrands, setAvailableBrands] = useState<string[]>([]);
   const [availableFuelTypes, setAvailableFuelTypes] = useState<string[]>([]);
   const [availableBodyTypes, setAvailableBodyTypes] = useState<string[]>([]);
+  const [recentlyUpdatedIds, setRecentlyUpdatedIds] = useState<Set<string>>(new Set());
   
   const { user } = useAuth();
   const { toast } = useToast();
@@ -63,6 +69,18 @@ const AllCars = () => {
     if (user) {
       fetchFavorites();
     }
+    const storageListener = (e: StorageEvent) => {
+      if (e.key === 'cars_updated_at') {
+        fetchCars();
+      }
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        fetchCars();
+      }
+    };
+    window.addEventListener('storage', storageListener);
+    document.addEventListener('visibilitychange', onVisibility);
     
     // Handle URL parameters
     const bodyTypeParam = searchParams.get('body_type');
@@ -83,7 +101,71 @@ const AllCars = () => {
     if (brandParam) {
       setSelectedBrand(brandParam);
     }
+    return () => {
+      window.removeEventListener('storage', storageListener);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
   }, [user, searchParams]);
+
+  // Subscribe to realtime changes so public list updates when admin edits/deletes
+  useEffect(() => {
+    const channel = supabase
+      .channel('public:cars')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'cars' }, (payload) => {
+        try {
+          const newRow = (payload as any).new;
+          const oldRow = (payload as any).old;
+          const eventType = (payload as any).eventType || (payload as any).event;
+
+          if (eventType === 'INSERT') {
+            setCars(prev => prev.filter(c => c.id !== newRow.id));
+            setCars(prev => [newRow, ...prev]);
+            markRecentlyUpdated(newRow.id);
+          } else if (eventType === 'UPDATE') {
+            setCars(prev => prev.map(c => (c.id === newRow.id ? newRow : c)));
+            markRecentlyUpdated(newRow.id);
+          } else if (eventType === 'DELETE') {
+            setCars(prev => prev.filter(c => c.id !== oldRow.id));
+            markRecentlyUpdated(oldRow.id);
+          }
+        } catch (err) {
+          console.warn('Realtime payload handling error (public):', err);
+        }
+      })
+      .subscribe();
+
+    // Listen for admin broadcast to refetch as fallback
+    const broadcast = supabase
+      .channel('cars-updates')
+      .on('broadcast', { event: 'cars-updated' }, () => {
+        fetchCars();
+      })
+      .subscribe();
+
+    return () => {
+      try {
+        channel.unsubscribe();
+        broadcast.unsubscribe();
+      } catch (err) {
+        // ignore
+      }
+    };
+  }, []);
+
+  const markRecentlyUpdated = (id: string) => {
+    setRecentlyUpdatedIds(prev => {
+      const copy = new Set(prev);
+      copy.add(id);
+      return copy;
+    });
+    setTimeout(() => {
+      setRecentlyUpdatedIds(prev => {
+        const copy = new Set(prev);
+        copy.delete(id);
+        return copy;
+      });
+    }, 6000);
+  };
 
   useEffect(() => {
     filterCars();
@@ -251,15 +333,7 @@ const AllCars = () => {
     }
   };
 
-  const formatPrice = (price: number) => {
-    if (price >= 10000000) {
-      return `₹${(price / 10000000).toFixed(1)} Cr`;
-    } else if (price >= 100000) {
-      return `₹${(price / 100000).toFixed(1)} L`;
-    } else {
-      return `₹${price.toLocaleString()}`;
-    }
-  };
+  // use shared formatPrice
 
   const clearFilters = () => {
     setSearchQuery('');
@@ -393,18 +467,33 @@ const AllCars = () => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {filteredCars.map((car) => (
-                <Card key={car.id} className="overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                <Card
+                  key={car.id}
+                  onClick={() => navigate(`/car/${car.id}`)}
+                  onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/car/${car.id}`); }}
+                  role="button"
+                  tabIndex={0}
+                  className="overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer"
+                >
                   <div className="relative h-48 bg-gray-100">
                     {car.image_url ? (
                       <img 
-                        src={car.image_url} 
+                        src={resolveImageUrl(car.image_url)} 
                         alt={`${car.make} ${car.model}`}
-                        className="w-full h-full object-cover"
+                        className={`w-full h-full object-cover ${recentlyUpdatedIds.has(car.id) ? 'ring-2 ring-emerald-400' : ''}`}
                       />
                     ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
-                        <CarIcon className="w-12 h-12 text-gray-500" />
-                      </div>
+                      (() => {
+                        const reps = getRepresentativeImages(`${car.make} ${car.model}`, car.images || []);
+                        if (reps && reps.length > 0) {
+                          return <img src={reps[0]} alt={`${car.make} ${car.model}`} className="w-full h-full object-cover" />;
+                        }
+                        return (
+                          <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
+                            <CarIcon className="w-12 h-12 text-gray-500" />
+                          </div>
+                        );
+                      })()
                     )}
                     <div className="absolute top-3 right-3">
                       <Button

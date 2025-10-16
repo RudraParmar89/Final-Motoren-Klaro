@@ -242,6 +242,9 @@ export const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
 
   const handleFaceRecognitionSuccess = () => {
     localStorage.setItem('admin_authenticated', 'true');
+    // 30-minute expiry for admin session
+    const expiresAt = Date.now() + 30 * 60 * 1000;
+    localStorage.setItem('admin_authenticated_expires_at', String(expiresAt));
     toast({
       title: "Admin authenticated",
       description: "Face recognition successful. Welcome, Admin!",

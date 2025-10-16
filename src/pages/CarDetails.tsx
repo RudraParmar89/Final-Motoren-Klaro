@@ -11,6 +11,7 @@ import PageLayout from '@/components/PageLayout';
 import SEO from '@/components/SEO';
 import CarImageCarousel from '@/components/CarImageCarousel';
 import { EMICalculator } from '@/components/EMICalculator';
+import { formatPrice } from '@/lib/formatPrice';
 
 interface Car {
   id: string;
@@ -59,6 +60,50 @@ const CarDetails = () => {
       if (user) {
         checkIfFavorite();
       }
+      const storageListener = (e: StorageEvent) => {
+        if (e.key === 'cars_updated_at') {
+          fetchCarDetails();
+        }
+      };
+      const onVisibility = () => {
+        if (document.visibilityState === 'visible') {
+          fetchCarDetails();
+        }
+      };
+      window.addEventListener('storage', storageListener);
+      document.addEventListener('visibilitychange', onVisibility);
+      // subscribe to realtime updates for this car id
+      const channel = supabase
+        .channel(`public:cars:${id}`)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'cars', filter: `id=eq.${id}` }, (payload) => {
+          try {
+            const newRow = (payload as any).new;
+            if (newRow) {
+              setCar(newRow);
+            } else {
+              // deleted
+              setCar(null);
+            }
+          } catch (err) {
+            console.warn('CarDetails realtime error:', err);
+          }
+        })
+        .subscribe();
+
+      // Also listen for admin broadcast to refetch as fallback
+      const broadcast = supabase
+        .channel('cars-updates')
+        .on('broadcast', { event: 'cars-updated' }, () => {
+          fetchCarDetails();
+        })
+        .subscribe();
+
+      return () => {
+        window.removeEventListener('storage', storageListener);
+        document.removeEventListener('visibilitychange', onVisibility);
+        try { channel.unsubscribe(); } catch (e) {}
+        try { broadcast.unsubscribe(); } catch (e) {}
+      };
     }
   }, [id, user]);
 
@@ -153,15 +198,7 @@ const CarDetails = () => {
     }
   };
 
-  const formatPrice = (price: number) => {
-    if (price >= 10000000) {
-      return `₹${(price / 10000000).toFixed(1)} Cr`;
-    } else if (price >= 100000) {
-      return `₹${(price / 100000).toFixed(1)} L`;
-    } else {
-      return `₹${price.toLocaleString()}`;
-    }
-  };
+  // use shared formatPrice
 
   if (loading) {
     return (

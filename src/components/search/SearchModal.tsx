@@ -3,7 +3,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Search, Filter } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { resolveImageUrl } from '@/lib/imageUtils';
+import { getRepresentativeImages } from '@/components/CarImageCarousel';
+import { formatPrice } from '@/lib/formatPrice';
 import { Card, CardContent } from "@/components/ui/card";
+import { useNavigate } from 'react-router-dom';
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -17,6 +21,7 @@ interface Car {
   price: number;
   fuel_type: string;
   image_url?: string;
+  images?: string[];
   power_bhp?: number;
   mileage_kmpl?: number;
 }
@@ -27,6 +32,7 @@ interface SearchModalProps {
 }
 
 export const SearchModal = ({ isOpen, onClose }: SearchModalProps) => {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [cars, setCars] = useState<Car[]>([]);
   const [filteredCars, setFilteredCars] = useState<Car[]>([]);
@@ -104,15 +110,7 @@ export const SearchModal = ({ isOpen, onClose }: SearchModalProps) => {
     setFilteredCars(filtered);
   };
 
-  const formatPrice = (price: number) => {
-    if (price >= 10000000) {
-      return `₹${(price / 10000000).toFixed(1)} Cr`;
-    } else if (price >= 100000) {
-      return `₹${(price / 100000).toFixed(1)} L`;
-    } else {
-      return `₹${price.toLocaleString()}`;
-    }
-  };
+  // use shared formatPrice
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -187,15 +185,30 @@ export const SearchModal = ({ isOpen, onClose }: SearchModalProps) => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {filteredCars.map((car) => (
-                <Card key={car.id} className="hover:shadow-lg transition-shadow cursor-pointer">
+                <Card
+                  key={car.id}
+                  onClick={() => { navigate(`/car/${car.id}`); onClose(); }}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { navigate(`/car/${car.id}`); onClose(); } }}
+                  role="button"
+                  tabIndex={0}
+                  className="hover:shadow-lg transition-shadow cursor-pointer"
+                >
                   <CardContent className="p-4">
                     <div className="flex gap-4">
-                      {car.image_url && (
+                      {car.image_url ? (
                         <img
-                          src={car.image_url}
+                          src={resolveImageUrl(car.image_url)}
                           alt={`${car.make} ${car.model}`}
                           className="w-20 h-20 object-cover rounded"
                         />
+                      ) : (
+                        (() => {
+                          const reps = getRepresentativeImages(`${car.make} ${car.model}`, car.images || []);
+                          if (reps && reps.length > 0) {
+                            return <img src={reps[0]} alt={`${car.make} ${car.model}`} className="w-20 h-20 object-cover rounded" />;
+                          }
+                          return null;
+                        })()
                       )}
                       <div className="flex-1">
                         <h3 className="font-semibold text-lg">

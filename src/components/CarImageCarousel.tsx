@@ -55,73 +55,73 @@ interface CarImageCarouselProps {
   className?: string;
 }
 
+// Create a mapping of car models to their image arrays (exported so other components can reuse)
+export const carImageMap: Record<string, string[]> = {
+  // Ferrari models
+  'Ferrari': [ferrariFront, ferrariSide, ferrariSide2, ferrariRear],
+  'F8 Tributo': [ferrariFront, ferrariSide, ferrariSide2, ferrariRear],
+  '812 Superfast': [ferrari812Front, ferrari812Side, ferrari812Rear],
+  '488': [ferrari488Front, ferrari488Side, ferrari488Rear],
+  '488 Pista': [ferrari488Front, ferrari488Side, ferrari488Rear],
+
+  // BMW models
+  'BMW X1': [bmwX1Front, bmwX1Side, bmwX1Rear],
+  'X1': [bmwX1Front, bmwX1Side, bmwX1Rear],
+  'BMW X5': [bmwX5Front, bmwX5Side, bmwX5Rear],
+  'X5': [bmwX5Front, bmwX5Side, bmwX5Rear],
+  '3 Series': [bmw3SeriesFront, bmw3SeriesSide],
+  '3 Series Gran Limousine': [bmw3SeriesFront, bmw3SeriesSide],
+  '7 Series': [bmw7SeriesFront, bmw7SeriesSide, bmw7SeriesRear],
+
+  // Jaguar models
+  'F-Type': [jaguarFTypeFront, jaguarFTypeSide, jaguarFTypeRear],
+  'Jaguar F-Type': [jaguarFTypeFront, jaguarFTypeSide, jaguarFTypeRear],
+
+  // Range Rover models
+  'Range Rover': [rangeRoverFront, rangeRoverSide, rangeRoverRear],
+  'Evoque': [rangeRoverFront, rangeRoverSide, rangeRoverRear],
+  'Sport': [rangeRoverFront, rangeRoverSide, rangeRoverRear],
+  'Velar': [rangeRoverFront, rangeRoverSide, rangeRoverRear],
+
+  // TATA models
+  'Nexon': [tataNexonFront, tataNexonSide, tataNexonRear],
+  'TATA Nexon': [tataNexonFront, tataNexonSide, tataNexonRear],
+  'Nexon EV': [tataNexonFront, tataNexonSide, tataNexonRear],
+
+  // Suzuki models
+  'Swift': [suzukiSwiftFront, suzukiSwiftSide, suzukiSwiftRear],
+  'Suzuki Swift': [suzukiSwiftFront, suzukiSwiftSide, suzukiSwiftRear],
+
+  // Kia models
+  'Seltos': [kiaSeltosFront, kiaSeltosSide, kiaSeltosRear],
+  'Kia Seltos': [kiaSeltosFront, kiaSeltosSide, kiaSeltosRear],
+};
+
+// Exported helper to get representative images for a car name
+export function getRepresentativeImages(carName: string, imagesFromDb: string[] = []) {
+  // First try to match with generated images based on car name
+  for (const [key, imgs] of Object.entries(carImageMap)) {
+    if (carName.toLowerCase().includes(key.toLowerCase())) {
+      return imgs;
+    }
+  }
+
+  // If no mapping found, prefer DB images that are usable (not referencing /src/assets/)
+  const dbImages = imagesFromDb.filter(img => img && img.trim() !== '' && !img.includes('/src/assets/'));
+  if (dbImages.length > 0) return dbImages;
+
+  // As final fallback, return default BMW images if the name mentions BMW
+  if (carName.toLowerCase().includes('bmw')) {
+    return [bmwX1Front, bmwX1Side, bmwX1Rear];
+  }
+
+  return [];
+}
+
 const CarImageCarousel = ({ images, carName, className }: CarImageCarouselProps) => {
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  // Create a mapping of car models to their image arrays
-  const carImageMap: Record<string, string[]> = {
-    // Ferrari models
-    'Ferrari': [ferrariFront, ferrariSide, ferrariSide2, ferrariRear],
-    'F8 Tributo': [ferrariFront, ferrariSide, ferrariSide2, ferrariRear],
-    '812 Superfast': [ferrari812Front, ferrari812Side, ferrari812Rear],
-    '488': [ferrari488Front, ferrari488Side, ferrari488Rear],
-    '488 Pista': [ferrari488Front, ferrari488Side, ferrari488Rear],
-    
-    // BMW models
-    'BMW X1': [bmwX1Front, bmwX1Side, bmwX1Rear],
-    'X1': [bmwX1Front, bmwX1Side, bmwX1Rear],
-    'BMW X5': [bmwX5Front, bmwX5Side, bmwX5Rear],
-    'X5': [bmwX5Front, bmwX5Side, bmwX5Rear],
-    '3 Series': [bmw3SeriesFront, bmw3SeriesSide],
-    '3 Series Gran Limousine': [bmw3SeriesFront, bmw3SeriesSide],
-    '7 Series': [bmw7SeriesFront, bmw7SeriesSide, bmw7SeriesRear],
-    
-    // Jaguar models
-    'F-Type': [jaguarFTypeFront, jaguarFTypeSide, jaguarFTypeRear],
-    'Jaguar F-Type': [jaguarFTypeFront, jaguarFTypeSide, jaguarFTypeRear],
-    
-    // Range Rover models
-    'Range Rover': [rangeRoverFront, rangeRoverSide, rangeRoverRear],
-    'Evoque': [rangeRoverFront, rangeRoverSide, rangeRoverRear],
-    'Sport': [rangeRoverFront, rangeRoverSide, rangeRoverRear],
-    'Velar': [rangeRoverFront, rangeRoverSide, rangeRoverRear],
-    
-    // TATA models
-    'Nexon': [tataNexonFront, tataNexonSide, tataNexonRear],
-    'TATA Nexon': [tataNexonFront, tataNexonSide, tataNexonRear],
-    'Nexon EV': [tataNexonFront, tataNexonSide, tataNexonRear],
-    
-    // Suzuki models
-    'Swift': [suzukiSwiftFront, suzukiSwiftSide, suzukiSwiftRear],
-    'Suzuki Swift': [suzukiSwiftFront, suzukiSwiftSide, suzukiSwiftRear],
-    
-    // Kia models
-    'Seltos': [kiaSeltosFront, kiaSeltosSide, kiaSeltosRear],
-    'Kia Seltos': [kiaSeltosFront, kiaSeltosSide, kiaSeltosRear],
-  };
-
-  // Get images from the mapping based on car name, or use provided images
-  const getCarImages = () => {
-    // First try to match with generated images based on car name
-    for (const [key, imgs] of Object.entries(carImageMap)) {
-      if (carName.toLowerCase().includes(key.toLowerCase())) {
-        return imgs;
-      }
-    }
-    // If no match found, use the images array from database
-    // Filter out asset path references and use actual image URLs or fallback to generated images
-    const dbImages = images.filter(img => img && img.trim() !== '' && !img.includes('/src/assets/'));
-    if (dbImages.length > 0) {
-      return dbImages;
-    }
-    // As final fallback, try to match car type for generated images
-    if (carName.toLowerCase().includes('bmw')) {
-      return [bmwX1Front, bmwX1Side, bmwX1Rear]; // Default BMW images
-    }
-    return images;
-  };
-
-  const validImages = getCarImages().filter(img => img && img.trim() !== '');
+  const validImages = getRepresentativeImages(carName, images).filter(img => img && img.trim() !== '');
   
   // If no valid images, show placeholder
   if (validImages.length === 0) {

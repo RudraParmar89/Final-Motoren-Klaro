@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Car, User, Heart, Settings, LogOut, BarChart3 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+// import { supabase } from "@/integrations/supabase/client";
 import { CarManagement } from "@/components/admin/CarManagement";
 import { UserFavoritesManagement } from "@/components/admin/UserFavoritesManagement";
 

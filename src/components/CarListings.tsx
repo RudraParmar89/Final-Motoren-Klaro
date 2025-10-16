@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowRight, DollarSign, Fuel, Gauge, Calendar, Car, Users } from 'lucide-react';
+import { resolveImageUrl } from '@/lib/imageUtils';
+import { getRepresentativeImages } from '@/components/CarImageCarousel';
 
 interface Car {
   id: string;
@@ -26,6 +28,7 @@ interface Car {
 }
 
 const CarListings = () => {
+  const navigate = useNavigate();
   const [cars, setCars] = useState<Car[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -49,6 +52,22 @@ const CarListings = () => {
     };
 
     fetchCars();
+    const storageListener = (e: StorageEvent) => {
+      if (e.key === 'cars_updated_at') {
+        fetchCars();
+      }
+    };
+    const broadcast = supabase
+      .channel('cars-updates')
+      .on('broadcast', { event: 'cars-updated' }, () => {
+        fetchCars();
+      })
+      .subscribe();
+    window.addEventListener('storage', storageListener);
+    return () => {
+      try { broadcast.unsubscribe(); } catch (e) {}
+      window.removeEventListener('storage', storageListener);
+    };
   }, []);
 
   if (loading) {
@@ -116,18 +135,35 @@ const CarListings = () => {
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
           {cars.map((car) => (
-            <Card key={car.id} className="overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1">
+            <Card
+              key={car.id}
+              onClick={() => navigate(`/car/${car.id}`)}
+              onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/car/${car.id}`); }}
+              role="button"
+              tabIndex={0}
+              className="overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1 cursor-pointer"
+            >
               <div className="relative h-48 bg-gray-100 overflow-hidden">
                 {car.image_url ? (
                   <img 
-                    src={car.image_url} 
+                    src={resolveImageUrl(car.image_url)} 
                     alt={`${car.year} ${car.make} ${car.model}`}
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
-                    <Car className="w-12 h-12 text-gray-500" />
-                  </div>
+                  (() => {
+                    const reps = getRepresentativeImages(`${car.make} ${car.model}`, []);
+                    if (reps && reps.length > 0) {
+                      return (
+                        <img src={reps[0]} alt={`${car.make} ${car.model}`} className="w-full h-full object-cover" />
+                      );
+                    }
+                    return (
+                      <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center">
+                        <Car className="w-12 h-12 text-gray-500" />
+                      </div>
+                    );
+                  })()
                 )}
                 <div className="absolute top-3 right-3">
                   <Badge variant="secondary" className="bg-white/90 text-gray-700">

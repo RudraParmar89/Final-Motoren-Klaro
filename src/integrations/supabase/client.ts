@@ -15,3 +15,6 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     autoRefreshToken: true,
   }
 });
+
+// URL where Supabase Edge Functions are hosted. Set VITE_SUPABASE_FUNCTIONS_URL in your .env if using functions.
+export const SUPABASE_FUNCTIONS_URL = (import.meta.env.VITE_SUPABASE_FUNCTIONS_URL as string) || '';

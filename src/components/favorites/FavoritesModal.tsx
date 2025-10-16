@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Heart, Trash2, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { formatPrice } from '@/lib/formatPrice';
 import { useNavigate } from "react-router-dom";
 
 interface Car {
@@ -97,15 +98,7 @@ export const FavoritesModal = ({ isOpen, onClose, user }: FavoritesModalProps) =
     }
   };
 
-  const formatPrice = (price: number) => {
-    if (price >= 10000000) {
-      return `₹${(price / 10000000).toFixed(1)} Cr`;
-    } else if (price >= 100000) {
-      return `₹${(price / 100000).toFixed(1)} L`;
-    } else {
-      return `₹${price.toLocaleString()}`;
-    }
-  };
+  // use shared formatPrice
 
   if (!user) {
     return (

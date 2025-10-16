@@ -11,7 +11,7 @@ import { Progress } from "@/components/ui/progress";
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from "@/components/ui/button";
 import { useScrollHijack } from '@/hooks/useScrollHijack';
-import BrandLogos from '@/components/BrandLogos';
+// BrandLogos moved to Hero.tsx
 import { supabase } from '@/integrations/supabase/client';
 
 interface CarCategory {
@@ -227,131 +227,11 @@ const Features = () => {
   return <>
       <section id="features" className="relative bg-white overflow-hidden py-10 md:py-[50px] w-full">
         <div className="w-full px-4 sm:px-6 lg:px-8" ref={featuresRef}> 
-          <div className="text-center mb-10 max-w-3xl mx-auto feature-item">
-            <div className="inline-block mb-2 px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-medium">
-              Car Comparison Features
-            </div>
-            <p className="text-gray-600 mt-4">
-              Our comprehensive car comparison platform provides all the tools and information you need to find and compare your perfect vehicle.
-            </p>
-          </div>
+          {/* Header removed as requested */}
           
-          {/* Scroll-hijacked features section */}
-          <div 
-            ref={hijackSectionRef}
-            className={cn(
-              "relative transition-all duration-500",
-              isHijacked ? "fixed inset-0 z-50 bg-black" : "grid grid-cols-1 md:grid-cols-2 gap-5"
-            )}
-            style={{ height: isHijacked ? '100vh' : 'auto' }}
-          >
-            {isHijacked && (
-              <div className="absolute top-4 right-4 z-10 text-white text-sm opacity-70">
-                {currentIndex + 1} / {features.length}
-              </div>
-            )}
-            
-            {features.map((feature, index) => (
-              <div 
-                key={index} 
-                className={cn(
-                  "feature-item rounded-xl overflow-hidden transform transition-all duration-500 relative shadow-lg",
-                  isHijacked 
-                    ? cn(
-                        "absolute inset-0 w-full h-full",
-                        index === currentIndex 
-                          ? "opacity-100 translate-x-0" 
-                          : index < currentIndex 
-                            ? "opacity-0 -translate-x-full" 
-                            : "opacity-0 translate-x-full"
-                      )
-                    : "hover:-translate-y-1 h-[280px]"
-                )}
-                style={{
-                  transitionDelay: isHijacked ? '0ms' : `${index * 100}ms`
-                }}
-                onMouseEnter={() => !isHijacked && setHoveredFeature(index)} 
-                onMouseLeave={() => !isHijacked && setHoveredFeature(null)}
-              >
-                <div className="absolute inset-0 w-full h-full">
-                  <img 
-                    src={feature.image} 
-                    alt={feature.title} 
-                    className={cn(
-                      "w-full h-full object-cover transition-all duration-300",
-                      isHijacked ? "grayscale-0" : "grayscale"
-                    )} 
-                  />
-                  <div className={cn(
-                    "absolute inset-0 transition-opacity duration-300",
-                    isHijacked 
-                      ? "bg-black/40" 
-                      : hoveredFeature === index 
-                        ? "bg-black/50" 
-                        : "bg-black/70"
-                  )}></div>
-                </div>
-                
-                <div className={cn(
-                  "relative z-10 flex flex-col justify-center",
-                  isHijacked 
-                    ? "p-16 h-full text-center items-center" 
-                    : "p-6 h-full justify-between"
-                )}>
-                  <div className={isHijacked ? "space-y-8" : ""}>
-                    <div className={cn(
-                      "inline-block p-3 bg-gray-800/40 backdrop-blur-sm rounded-lg transition-all duration-300 transform",
-                      isHijacked 
-                        ? "mb-6 scale-150" 
-                        : hoveredFeature === index 
-                          ? "mb-4 hover:scale-110" 
-                          : "mb-4"
-                    )}>
-                      <div className={`transform transition-transform duration-300 ${!isHijacked && hoveredFeature === index ? 'rotate-12' : ''}`}>
-                        {feature.icon}
-                      </div>
-                    </div>
-                    <h3 className={cn(
-                      "font-semibold text-white",
-                      isHijacked ? "text-4xl mb-6" : "text-xl mb-2"
-                    )}>
-                      {feature.title}
-                    </h3>
-                    <p className={cn(
-                      "text-white/90",
-                      isHijacked ? "text-lg max-w-2xl" : "text-sm"
-                    )}>
-                      {feature.description}
-                    </p>
-                  </div>
-                  {!isHijacked && (
-                    <div className={`h-0.5 bg-white/70 mt-3 transition-all duration-500 ${hoveredFeature === index ? 'w-full' : 'w-0'}`}></div>
-                  )}
-                </div>
-              </div>
-            ))}
-            
-            {isHijacked && (
-              <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 text-white text-center">
-                <div className="flex space-x-2 mb-4">
-                  {features.map((_, index) => (
-                    <div 
-                      key={index}
-                      className={cn(
-                        "w-2 h-2 rounded-full transition-all duration-300",
-                        index === currentIndex ? "bg-white w-8" : "bg-white/50"
-                      )}
-                    />
-                  ))}
-                </div>
-                <p className="text-sm opacity-70">
-                  {isMobile ? "Swipe" : "Scroll"} to continue • Press ESC to exit
-                </p>
-              </div>
-            )}
-          </div>
+          {/* Features block removed per request */}
 
-          <div className="mt-16 mb-8 feature-item">
+          <div className="mt-6 mb-8 feature-item">
             <div className="text-center mb-8">
               <div className="inline-block mb-2 px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-medium">
                 Vehicle Categories
@@ -578,7 +458,7 @@ const Features = () => {
         </div>
       </section>
       
-      <BrandLogos />
+      
     </>;
 };
 

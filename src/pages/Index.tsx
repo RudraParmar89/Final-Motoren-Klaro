@@ -1,6 +1,7 @@
 import PageLayout from '@/components/PageLayout';
 import Hero from '@/components/Hero';
 import Features from '@/components/Features';
+import BrandLogos from '@/components/BrandLogos';
 import CarListings from '@/components/CarListings';
 import WhyMotorenKlaro from '@/components/WhyMotorenKlaro';
 import SEO from '@/components/SEO';
@@ -24,9 +25,10 @@ const Index = () => {
         imageUrl="/lovable-uploads/37999ffc-9cf9-4d97-8f56-0ec7fd532245.png"
         keywords={['car comparison', 'motoren klaro', 'car specs', 'car prices', 'vehicle comparison', 'car reviews', 'auto shopping']}
       />
-      <Hero />
-      <CarListings />
-      <Features />
+    <Hero />
+    <BrandLogos />
+    <Features />
+    <CarListings />
       <WhyMotorenKlaro />
     </PageLayout>
   );

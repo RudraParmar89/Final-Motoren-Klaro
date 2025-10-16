@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Search, Heart, Trash2, User, Car } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { formatPrice } from '@/lib/formatPrice';
 
 interface UserFavorite {
   id: string;
@@ -147,15 +148,7 @@ export const UserFavoritesManagement = () => {
     }
   };
 
-  const formatPrice = (price: number) => {
-    if (price >= 10000000) {
-      return `₹${(price / 10000000).toFixed(1)} Cr`;
-    } else if (price >= 100000) {
-      return `₹${(price / 100000).toFixed(1)} L`;
-    } else {
-      return `₹${price.toLocaleString()}`;
-    }
-  };
+  // use shared formatPrice
 
   const filteredFavorites = favorites.filter(favorite => {
     const carName = `${favorite.cars.make} ${favorite.cars.model}`.toLowerCase();

@@ -265,7 +265,7 @@ export const FaceRecognition = ({ onSuccess, onError }: FaceRecognitionProps) =>
       }
 
       // Compare with authorized reference descriptors
-      const threshold = 0.8; // more lenient threshold for admin access
+      const threshold = 0.5; // stricter threshold for admin access (lower = stricter)
       console.log(`Comparing against ${referenceFaceDescriptors.current.length} authorized face descriptors (threshold ${threshold})`);
 
       for (const referenceDescriptor of referenceFaceDescriptors.current) {

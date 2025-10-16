@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Search, Plus, X, Fuel, Zap, Settings, Shield, Star, Car } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { formatPrice } from '@/lib/formatPrice';
 
 interface Car {
   id: string;
@@ -129,15 +130,7 @@ export const CarComparison = ({ isOpen, onClose, preSelectedCars }: CarCompariso
     setSelectedCars(selectedCars.filter(car => car.id !== carId));
   };
 
-  const formatPrice = (price: number) => {
-    if (price >= 10000000) {
-      return `₹${(price / 10000000).toFixed(1)} Cr`;
-    } else if (price >= 100000) {
-      return `₹${(price / 100000).toFixed(1)} L`;
-    } else {
-      return `₹${price.toLocaleString()}`;
-    }
-  };
+  // use shared formatPrice
 
   const ComparisonRow = ({ label, getValue, icon: Icon, compareType }: { 
     label: string; 

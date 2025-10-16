@@ -3,6 +3,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import ComparisonSection from "./ComparisonSection";
+import BrandLogos from '@/components/BrandLogos';
 
 const Hero = () => {
   const isMobile = useIsMobile();
@@ -102,7 +103,7 @@ const Hero = () => {
         </div>
       </div>
       
-      <ComparisonSection />
+  <ComparisonSection />
 
     </motion.div>;
 };
