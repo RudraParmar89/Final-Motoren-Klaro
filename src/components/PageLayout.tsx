@@ -5,6 +5,7 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import ContactInfo from '@/components/ContactInfo';
 import FloatingContactButton from '@/components/FloatingContactButton';
+import { CarChatbot } from '@/components/CarChatbot';
 
 type PageLayoutProps = {
   children: React.ReactNode;
@@ -25,7 +26,8 @@ const PageLayout = ({ children, showContact = true }: PageLayoutProps) => {
       {children}
       {showContact && <ContactInfo />}
       <Footer />
-      {showContact && <FloatingContactButton />}
+      {/* {showContact && <FloatingContactButton />} */}
+      <CarChatbot />
     </div>
   );
 };

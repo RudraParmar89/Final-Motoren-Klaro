@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Search, Filter } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -114,9 +114,12 @@ export const SearchModal = ({ isOpen, onClose }: SearchModalProps) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
+      <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col" aria-describedby="search-modal-description">
         <DialogHeader>
           <DialogTitle>Search Cars</DialogTitle>
+          <DialogDescription id="search-modal-description">
+            Search and filter cars by brand, fuel type, and price range.
+          </DialogDescription>
         </DialogHeader>
         
         <div className="space-y-4">

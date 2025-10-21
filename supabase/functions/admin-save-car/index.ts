@@ -28,11 +28,22 @@ Deno.serve(async (req) => {
       }
     )
 
-    const body = await req.json();
+        const body = await req.json();
     const { action, payload, id } = body;
 
-    if (!action || !payload) {
-      return new Response(JSON.stringify({ error: 'Missing action or payload' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    // Validate action exists
+    if (!action) {
+      return new Response(JSON.stringify({ error: 'Missing action' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    }
+
+    // For delete action, only id is required
+    if (action !== 'delete' && !payload) {
+      return new Response(JSON.stringify({ error: 'Missing payload' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    }
+
+    // For update and delete actions, id is required
+    if ((action === 'update' || action === 'delete') && !id) {
+      return new Response(JSON.stringify({ error: 'Missing id for update/delete action' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
     }
 
     if (action === 'update') {

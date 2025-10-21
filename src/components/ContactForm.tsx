@@ -1,9 +1,11 @@
 import { useState } from 'react';
+import { useAuth } from '@/hooks/useAuth';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Send, Mail, User, MessageSquare, Phone, Car } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -23,16 +25,15 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 
 const carBrands = [
-  'BMW', 'Mercedes-Benz', 'Audi', 'Jaguar', 'Land Rover', 'Ferrari',
-  'Maruti Suzuki', 'Hyundai', 'Tata', 'Mahindra', 'Kia', 'Honda',
-  'Toyota', 'Volkswagen', 'Skoda', 'Nissan', 'Renault', 'Ford',
+  'BMW', 'Jaguar', 'Land Rover', 'Ferrari',
+  'Maruti Suzuki', 'Hyundai', 'Tata', 'Kia', 'Honda',
   'Other'
 ];
 
 const ContactForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formStartTime] = useState<number>(Date.now());
-  
+  const { user } = useAuth();
   const { toast } = useToast();
   
   const form = useForm<FormValues>({
@@ -49,6 +50,16 @@ const ContactForm = () => {
   });
 
   const onSubmit = async (data: FormValues) => {
+    // Check if user is signed in
+    if (!user) {
+      toast({
+        title: "Sign in required",
+        description: "Please sign in to send inquiries. Click the user icon in the navigation to sign in.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     
     try {
@@ -76,6 +87,25 @@ const ContactForm = () => {
       }
       
       console.log('Contact form submitted:', data);
+      
+      // Save to Supabase inquiries table
+      const { error: supabaseError } = await supabase
+        .from('inquiries')
+        .insert([
+          {
+            name: data.name,
+            email: data.email,
+            phone: data.phone,
+            car_brand: data.carBrand,
+            message: data.message,
+            status: 'new'
+          }
+        ]);
+
+      if (supabaseError) {
+        console.error('Supabase error:', supabaseError);
+        throw supabaseError;
+      }
       
       toast({
         title: "Message sent!",

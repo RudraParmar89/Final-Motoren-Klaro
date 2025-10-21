@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Edit, Trash2, Search } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -39,7 +39,7 @@ export const CarManagement = () => {
   const [lastSupabaseResponse, setLastSupabaseResponse] = useState<any>(null);
   // recently updated IDs to briefly highlight changed cards
   const [recentlyUpdatedIds, setRecentlyUpdatedIds] = useState<Set<string>>(new Set());
-  const [formData, setFormData] = useState({
+      const [formData, setFormData] = useState({
     brand: '',
     make: '',
     model: '',
@@ -49,10 +49,15 @@ export const CarManagement = () => {
     body_type: '',
     transmission: '',
     image_url: '',
+    images: [] as string[],
+    youtube_url: '',
     power_bhp: 0,
     mileage_kmpl: 0,
     description: ''
   });
+    const [imageUrls, setImageUrls] = useState<string[]>(['', '', '', '']);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [useUrlInput, setUseUrlInput] = useState(false);
   const { toast } = useToast();
   const broadcastChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
 
@@ -124,7 +129,7 @@ export const CarManagement = () => {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
     try {
@@ -144,7 +149,9 @@ export const CarManagement = () => {
           fuel_type: data.fuel_type || null,
           body_type: data.body_type || null,
           transmission: data.transmission || null,
-          image_url: data.image_url || null,
+                    image_url: data.image_url || null,
+          images: data.images || [],
+          youtube_url: data.youtube_url || null,
           power_bhp: toNumber(data.power_bhp),
           mileage_kmpl: toNumber(data.mileage_kmpl),
           description: data.description || null,
@@ -160,33 +167,19 @@ export const CarManagement = () => {
         const updatedLocal = { ...editingCar, ...payload } as Car;
         setCars(prev => prev.map(c => (c.id === editingCar.id ? updatedLocal : c)));
 
-        // send update and use returned row to keep canonical state
-        let serverRow: any = null;
-        if (SUPABASE_FUNCTIONS_URL) {
-          // call edge function
-          const resp = await fetch(`${SUPABASE_FUNCTIONS_URL}/admin-save-car`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'update', id: editingCar.id, payload }),
-          });
-          const result = await resp.json();
-          console.debug('Function update response:', result);
-          setLastSupabaseResponse(result);
-          if (!resp.ok) throw new Error(result?.error || JSON.stringify(result));
-          const returned = result.data;
-          serverRow = Array.isArray(returned) ? returned[0] : returned;
-        } else {
-          const res = await supabase
-            .from('cars')
-            .update(payload)
-            .eq('id', editingCar.id)
-            .select();
-          console.debug('Supabase update response:', res);
-          setLastSupabaseResponse(res);
-          if (res.error) throw res.error;
-          const returned = res.data as any;
-          serverRow = Array.isArray(returned) ? returned[0] : returned;
-        }
+        // Always use direct Supabase client (simpler and works with RLS)
+        const res = await supabase
+          .from('cars')
+          .update(payload)
+          .eq('id', editingCar.id)
+          .select();
+        
+        console.debug('Supabase update response:', res);
+        setLastSupabaseResponse(res);
+        
+        if (res.error) throw res.error;
+        
+        const serverRow = Array.isArray(res.data) ? res.data[0] : res.data;
 
         if (serverRow) {
           // replace local with server-returned row
@@ -214,37 +207,25 @@ export const CarManagement = () => {
           try { await broadcastChannelRef.current?.send({ type: 'broadcast', event: 'cars-updated', payload: { action: 'update' } }); } catch (e) {}
           try { localStorage.setItem('cars_updated_at', String(Date.now())); } catch (e) {}
         }
-      } else {
+            } else {
         // optimistic add with temporary id
         const tempId = `temp-${Date.now()}`;
         const tempCar: any = { id: tempId, ...payload };
         setCars(prev => [tempCar, ...prev]);
         markRecentlyUpdated(tempId);
 
-        let serverRow: any = null;
-        if (SUPABASE_FUNCTIONS_URL) {
-          const resp = await fetch(`${SUPABASE_FUNCTIONS_URL}/admin-save-car`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'insert', payload }),
-          });
-          const result = await resp.json();
-          console.debug('Function insert response:', result);
-          setLastSupabaseResponse(result);
-          if (!resp.ok) throw new Error(result?.error || JSON.stringify(result));
-          const returned = result.data;
-          serverRow = Array.isArray(returned) ? returned[0] : returned;
-        } else {
-          const res = await supabase
-            .from('cars')
-            .insert([payload])
-            .select();
-          console.debug('Supabase insert response:', res);
-          setLastSupabaseResponse(res);
-          if (res.error) throw res.error;
-          const returned = res.data as any;
-          serverRow = Array.isArray(returned) ? returned[0] : returned;
-        }
+        // Always use direct Supabase client (simpler and works with RLS)
+        const res = await supabase
+          .from('cars')
+          .insert([payload])
+          .select();
+        
+        console.debug('Supabase insert response:', res);
+        setLastSupabaseResponse(res);
+        
+        if (res.error) throw res.error;
+        
+        const serverRow = Array.isArray(res.data) ? res.data[0] : res.data;
 
         if (serverRow) {
           // replace temp entry with server row
@@ -282,29 +263,20 @@ export const CarManagement = () => {
     }
   };
 
-  const handleDelete = async (carId: string) => {
+    const handleDelete = async (carId: string) => {
     if (!confirm('Are you sure you want to delete this car?')) return;
     // optimistic remove
     const previous = cars;
     setCars(prev => prev.filter(c => c.id !== carId));
     try {
-      if (SUPABASE_FUNCTIONS_URL) {
-        const resp = await fetch(`${SUPABASE_FUNCTIONS_URL}/admin-save-car`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'delete', id: carId })
-        });
-        if (!resp.ok) {
-          const result = await resp.json().catch(() => ({}));
-          throw new Error(result?.error || 'Failed to delete via function');
-        }
-      } else {
-        const { error } = await supabase
-          .from('cars')
-          .delete()
-          .eq('id', carId);
-        if (error) throw error;
-      }
+      // Always use direct Supabase client (simpler and works with RLS)
+      const { error } = await supabase
+        .from('cars')
+        .delete()
+        .eq('id', carId);
+      
+      if (error) throw error;
+      
       toast({ title: "Success", description: "Car deleted successfully." });
       try { await broadcastChannelRef.current?.send({ type: 'broadcast', event: 'cars-updated', payload: { id: carId, action: 'delete' } }); } catch (e) {}
       try { localStorage.setItem('cars_updated_at', String(Date.now())); } catch (e) {}
@@ -336,7 +308,7 @@ export const CarManagement = () => {
     }, 6000);
   };
 
-  const resetForm = () => {
+      const resetForm = () => {
     setFormData({
       brand: '',
       make: '',
@@ -347,15 +319,18 @@ export const CarManagement = () => {
       body_type: '',
       transmission: '',
       image_url: '',
+      images: [],
+      youtube_url: '',
       power_bhp: 0,
       mileage_kmpl: 0,
       description: ''
     });
+    setImageUrls(['', '', '', '']);
   };
 
   const openEditModal = (car: any) => {
     setEditingCar(car);
-    setFormData({
+            setFormData({
       brand: car.brand || '',
       make: car.make || '',
       model: car.model || '',
@@ -365,10 +340,19 @@ export const CarManagement = () => {
       body_type: car.body_type || '',
       transmission: car.transmission || '',
       image_url: car.image_url || '',
+      images: car.images || [],
+      youtube_url: car.youtube_url || '',
       power_bhp: car.power_bhp || 0,
       mileage_kmpl: car.mileage_kmpl || 0,
       description: car.description || ''
     });
+    const carImages = car.images || [];
+    setImageUrls([
+      carImages[0] || '',
+      carImages[1] || '',
+      carImages[2] || '',
+      carImages[3] || ''
+    ]);
     setIsAddModalOpen(true);
   };
 
@@ -391,9 +375,12 @@ export const CarManagement = () => {
               Add New Car
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                    <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto" aria-describedby="car-form-description">
             <DialogHeader>
               <DialogTitle>{editingCar ? 'Edit Car' : 'Add New Car'}</DialogTitle>
+              <DialogDescription id="car-form-description">
+                {editingCar ? 'Update the car details below.' : 'Fill in the details to add a new car to the inventory.'}
+              </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
@@ -522,14 +509,182 @@ export const CarManagement = () => {
                 </div>
               </div>
 
+                                                        <div>
+                <div className="flex items-center justify-between mb-2">
+                  <Label>Car Images (4 images)</Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setUseUrlInput(!useUrlInput)}
+                  >
+                    {useUrlInput ? 'Switch to Upload' : 'Use URLs Instead'}
+                  </Button>
+                </div>
+                <p className="text-xs text-gray-500 mb-2">
+                  {useUrlInput ? 'Paste image URLs (if already uploaded to Supabase)' : 'Upload 4 images: Main (Card Thumbnail), Side, Front, Rear (Max 5MB each)'}
+                </p>
+                {isUploadingImage && (
+                  <p className="text-xs text-blue-600 mb-2">Uploading image, please wait...</p>
+                )}
+                {!useUrlInput && (
+                  <p className="text-xs text-red-600 mb-2">
+                    ⚠️ If upload fails, click "Use URLs Instead" and paste image URLs manually
+                  </p>
+                )}
+                <div className="space-y-3">
+                  {[0, 1, 2, 3].map((index) => (
+                    <div key={index}>
+                      <Label htmlFor={`image-${index}`} className="text-xs font-semibold">
+                        Image {index + 1} {index === 0 ? '(Main/Thumbnail - Shows on card)' : index === 1 ? '(Side View)' : index === 2 ? '(Front View)' : '(Rear/Back View)'}
+                      </Label>
+                                            <div className="flex gap-2">
+                        {useUrlInput ? (
+                          <Input
+                            id={`image-url-${index}`}
+                            type="text"
+                            placeholder="https://your-project.supabase.co/storage/v1/object/public/lovable-uploads/car-images/..."
+                            value={imageUrls[index]}
+                            onChange={(e) => {
+                              const newImageUrls = [...imageUrls];
+                              newImageUrls[index] = e.target.value;
+                              setImageUrls(newImageUrls);
+                              
+                              const validImages = newImageUrls.filter(url => url !== '');
+                              setFormData(prev => ({ 
+                                ...prev, 
+                                images: validImages,
+                                image_url: validImages[0] || prev.image_url
+                              }));
+                            }}
+                          />
+                        ) : (
+                          <Input
+                            id={`image-${index}`}
+                            type="file"
+                            accept="image/*"
+                                                    onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            
+                            // Validate file
+                            if (!file.type.startsWith('image/')) {
+                              toast({
+                                variant: "destructive",
+                                title: "Error",
+                                description: "Please select an image file.",
+                              });
+                              return;
+                            }
+
+                            if (file.size > 5 * 1024 * 1024) { // 5MB limit
+                              toast({
+                                variant: "destructive",
+                                title: "Error",
+                                description: "Image size must be less than 5MB.",
+                              });
+                              return;
+                            }
+                            
+                            setIsUploadingImage(true);
+                            try {
+                              const fileExt = file.name.split('.').pop();
+                              const safeBrand = (formData.brand || 'car').replace(/[^a-zA-Z0-9]/g, '_');
+                              const safeModel = (formData.model || 'model').replace(/[^a-zA-Z0-9]/g, '_');
+                              const fileName = `${safeBrand}_${safeModel}_${index + 1}_${Date.now()}.${fileExt}`;
+                              const filePath = `car-images/${fileName}`;
+
+                              console.log('Uploading to:', filePath);
+
+                              const { data, error: uploadError } = await supabase.storage
+                                .from('lovable-uploads')
+                                .upload(filePath, file, { 
+                                  cacheControl: '3600',
+                                  upsert: true 
+                                });
+
+                              if (uploadError) {
+                                console.error('Upload error:', uploadError);
+                                throw uploadError;
+                              }
+
+                              console.log('Upload successful:', data);
+
+                              const { data: { publicUrl } } = supabase.storage
+                                .from('lovable-uploads')
+                                .getPublicUrl(filePath);
+
+                              console.log('Public URL:', publicUrl);
+
+                              const newImageUrls = [...imageUrls];
+                              newImageUrls[index] = publicUrl;
+                              setImageUrls(newImageUrls);
+                              
+                              const validImages = newImageUrls.filter(url => url !== '');
+                              setFormData(prev => ({ 
+                                ...prev, 
+                                images: validImages,
+                                image_url: validImages[0] || prev.image_url
+                              }));
+
+                              toast({
+                                title: "Success",
+                                description: `Image ${index + 1} uploaded successfully.`,
+                              });
+                                                        } catch (error: any) {
+                              console.error('Error uploading image:', error);
+                              console.error('Error details:', {
+                                message: error.message,
+                                statusCode: error.statusCode,
+                                error: error.error,
+                                details: error
+                              });
+                              
+                              let errorMsg = "Failed to upload image.";
+                              if (error.message?.includes('new row violates row-level security')) {
+                                errorMsg = "Storage permission denied. Run fix_storage_permissions.sql in Supabase.";
+                              } else if (error.message?.includes('bucket')) {
+                                errorMsg = "Storage bucket not found. Check Supabase storage settings.";
+                              } else if (error.message) {
+                                errorMsg = error.message;
+                              }
+                              
+                              toast({
+                                variant: "destructive",
+                                title: "Error",
+                                description: errorMsg,
+                              });
+                            } finally {
+                              setIsUploadingImage(false);
+                            }
+                                                    }}
+                          className="flex-1"
+                        />
+                        )}
+                        {imageUrls[index] && (
+                          <img 
+                            src={imageUrls[index]} 
+                            alt={`Preview ${index + 1}`}
+                            className="w-16 h-16 object-cover rounded border"
+                          />
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               <div>
-                <Label htmlFor="image_url">Image URL</Label>
+                <Label htmlFor="youtube_url">YouTube Video URL (Embed)</Label>
                 <Input
-                  id="image_url"
-                  value={formData.image_url}
-                  onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                  placeholder="https://example.com/car-image.jpg"
+                  id="youtube_url"
+                  value={formData.youtube_url}
+                  onChange={(e) => setFormData({ ...formData, youtube_url: e.target.value })}
+                  placeholder="https://www.youtube.com/embed/VIDEO_ID"
                 />
+                <p className="text-xs text-gray-500 mt-1">
+                  Tip: Use embed URL format: https://www.youtube.com/embed/VIDEO_ID
+                </p>
               </div>
 
               <div>

@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, Plus, X, Fuel, Zap, Settings, Shield, Star, Car } from "lucide-react";
+import { Search, Plus, X, Fuel, Zap, Settings, Shield, Star, Car, BarChart3 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { formatPrice } from '@/lib/formatPrice';
 
@@ -179,23 +179,25 @@ export const CarComparison = ({ isOpen, onClose, preSelectedCars }: CarCompariso
     };
 
     return (
-      <div className="grid grid-cols-4 gap-4 py-3 border-b border-gray-100">
-        <div className="flex items-center gap-2 font-medium text-gray-700">
-          {Icon && <Icon size={16} />}
+      <div className="grid grid-cols-4 gap-4 py-4 px-3 rounded-lg hover:bg-gray-50 transition-colors">
+        <div className="flex items-center gap-2 font-semibold text-gray-800">
+          {Icon && <Icon size={18} className="text-primary" />}
           {label}
         </div>
         {selectedCars.map((car, index) => (
           <div 
             key={car.id} 
-            className={`text-center font-medium ${
-              shouldHighlight(car, index) ? 'text-green-600' : ''
+            className={`text-center font-semibold px-3 py-2 rounded-md transition-all ${
+              shouldHighlight(car, index) 
+                ? 'text-green-700 bg-green-50 border-2 border-green-200' 
+                : 'text-gray-700'
             }`}
           >
-            {getValue(car) || 'N/A'}
+            {getValue(car) || <span className="text-gray-400">N/A</span>}
           </div>
         ))}
         {Array.from({ length: 3 - selectedCars.length }, (_, index) => (
-          <div key={`empty-${index}`} className="text-center text-gray-300">-</div>
+          <div key={`empty-${index}`} className="text-center text-gray-300 py-2">-</div>
         ))}
       </div>
     );
@@ -203,9 +205,12 @@ export const CarComparison = ({ isOpen, onClose, preSelectedCars }: CarCompariso
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto" aria-describedby="car-comparison-description">
         <DialogHeader>
           <DialogTitle>Compare Cars Side-by-Side</DialogTitle>
+          <DialogDescription id="car-comparison-description">
+            Compare up to 3 cars side by side with detailed specifications.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6">
@@ -286,48 +291,86 @@ export const CarComparison = ({ isOpen, onClose, preSelectedCars }: CarCompariso
             )}
           </div>
 
-          {/* Selected Cars Display */}
-          <div className="grid grid-cols-4 gap-4">
-            <div className="font-semibold text-gray-700">Selected Cars (Max 3)</div>
-            {selectedCars.map((car) => (
-              <Card key={car.id} className="relative">
-                <button
-                  onClick={() => removeCarFromComparison(car.id)}
-                  className="absolute top-2 right-2 z-10 p-1 bg-red-100 hover:bg-red-200 rounded-full"
-                >
-                  <X size={16} className="text-red-600" />
-                </button>
-                <CardContent className="p-4 text-center">
-                  {car.image_url && (
-                    <img
-                      src={car.image_url}
-                      alt={`${car.make} ${car.model}`}
-                      className="w-full h-24 object-cover rounded mb-2"
-                    />
-                  )}
-                  <div className="font-semibold">{car.make} {car.model}</div>
-                  <div className="text-sm text-gray-500">{car.year}</div>
-                  <div className="text-lg font-bold text-primary">{formatPrice(car.price)}</div>
-                </CardContent>
-              </Card>
-            ))}
-            {Array.from({ length: 3 - selectedCars.length }, (_, index) => (
-              <Card key={`placeholder-${index}`} className="border-dashed">
-                <CardContent className="p-4 text-center flex items-center justify-center h-32">
-                  <div className="text-gray-400">
-                    <Plus size={24} className="mx-auto mb-2" />
-                    Add Car
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+          {/* Selected Cars Display - Enhanced Design */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-lg text-gray-900 flex items-center gap-2">
+                <Car className="h-5 w-5 text-primary" />
+                Selected Cars
+                <Badge variant="secondary">{selectedCars.length}/3</Badge>
+              </h3>
+              {selectedCars.length > 0 && (
+                <Button variant="outline" size="sm" onClick={() => setSelectedCars([])}>
+                  Clear All
+                </Button>
+              )}
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {selectedCars.map((car, idx) => (
+                <Card key={car.id} className="relative overflow-hidden group hover:shadow-xl transition-all duration-300 border-2 border-primary/20">
+                  <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-primary/60"></div>
+                  <button
+                    onClick={() => removeCarFromComparison(car.id)}
+                    className="absolute top-3 right-3 z-10 p-1.5 bg-red-500 hover:bg-red-600 rounded-full shadow-md transition-all"
+                  >
+                    <X size={14} className="text-white" />
+                  </button>
+                  <CardContent className="p-5">
+                    {car.image_url ? (
+                      <div className="relative mb-4 rounded-lg overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100">
+                        <img
+                          src={car.image_url}
+                          alt={`${car.make} ${car.model}`}
+                          className="w-full h-32 object-contain group-hover:scale-105 transition-transform duration-300"
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-full h-32 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg flex items-center justify-center mb-4">
+                        <Car className="h-12 w-12 text-gray-400" />
+                      </div>
+                    )}
+                    <div className="space-y-2">
+                      <Badge className="bg-primary/10 text-primary hover:bg-primary/20">#{idx + 1}</Badge>
+                      <h4 className="font-bold text-lg">{car.make} {car.model}</h4>
+                      <p className="text-sm text-gray-500">{car.year}</p>
+                      <div className="pt-2 border-t">
+                        <p className="text-xs text-gray-500 mb-1">Price</p>
+                        <p className="text-xl font-bold text-primary">{formatPrice(car.price)}</p>
+                      </div>
+                      <div className="flex gap-2">
+                        <Badge variant="outline" className="text-xs">{car.fuel_type}</Badge>
+                        <Badge variant="outline" className="text-xs">{car.transmission}</Badge>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+              {Array.from({ length: 3 - selectedCars.length }, (_, index) => (
+                <Card key={`placeholder-${index}`} className="border-2 border-dashed border-gray-300 hover:border-primary/50 transition-colors">
+                  <CardContent className="p-5 flex flex-col items-center justify-center h-full min-h-[280px]">
+                    <div className="w-20 h-20 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center mb-4">
+                      <Plus size={32} className="text-gray-400" />
+                    </div>
+                    <p className="text-gray-500 font-medium">Add {index === 0 && selectedCars.length === 0 ? 'First' : index === 1 && selectedCars.length === 1 ? 'Second' : 'Third'} Car</p>
+                    <p className="text-xs text-gray-400 mt-1">Search above to add</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </div>
 
-          {/* Comparison Table */}
+          {/* Comparison Table - Enhanced */}
           {selectedCars.length > 0 && (
-            <div className="border rounded-lg overflow-hidden">
-              <div className="bg-gray-50 p-4 font-semibold">Detailed Comparison</div>
-              <div className="p-4 space-y-1">
+            <div className="border-2 border-gray-200 rounded-xl overflow-hidden shadow-lg">
+              <div className="bg-gradient-to-r from-primary to-primary/80 p-5 text-white">
+                <h3 className="font-bold text-xl flex items-center gap-2">
+                  <BarChart3 className="h-6 w-6" />
+                  Detailed Comparison
+                </h3>
+                <p className="text-sm text-white/80 mt-1">Compare specifications side-by-side</p>
+              </div>
+              <div className="p-6 space-y-2 bg-gradient-to-b from-white to-gray-50">
                 <ComparisonRow 
                   label="Price" 
                   getValue={(car) => formatPrice(car.price)}

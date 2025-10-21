@@ -14,7 +14,7 @@ const ContactInfo = () => {
             Motoren Klaro Team
           </h2>
           <p className="text-gray-700 text-lg max-w-2xl mx-auto">
-            Need help choosing the perfect car? Our expert team is here to assist you with detailed comparisons, technical specifications, and personalized recommendations for your next vehicle purchase.
+           Meet the driving force behind Motoren Klaro. Our versatile team, combining Full Stack development, Strategic Leadership, and Project Management, is dedicated to building a seamless platform that delivers expert car comparisons and personalized purchasing guidance.
           </p>
         </div>
 
@@ -23,7 +23,7 @@ const ContactInfo = () => {
           <div className="bg-white rounded-xl shadow-xl p-6 border border-gray-700">
             <div className="flex flex-col items-center text-center">
               <img
-                src="/lovable-uploads/WhatsApp Image 2025-10-10 at 22.52.22_3bdb6dcd.jpg"
+                src="\lovable-uploads\Adobe Express - file.png"
                 alt="Felix von Heland"
                 onError={(e) => { (e.target as HTMLImageElement).src = '/lovable-uploads/WIN_20250919_19_23_42_Pro.jpg'; }}
                 className="w-24 h-24 rounded-full mb-3 object-cover filter grayscale"

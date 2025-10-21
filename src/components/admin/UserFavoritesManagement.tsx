@@ -13,6 +13,7 @@ interface UserFavorite {
   user_id: string;
   car_id: string;
   created_at: string;
+  user_email?: string;
   cars: {
     id: string;
     brand: string;
@@ -47,11 +48,37 @@ export const UserFavoritesManagement = () => {
   useEffect(() => {
     fetchFavorites();
     fetchStats();
+
+    // Real-time subscription for favorites
+    const favoritesChannel = supabase
+      .channel('user_favorites_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_favorites'
+        },
+        (payload) => {
+          console.log('Favorites changed:', payload);
+          // Refresh data when changes occur
+          fetchFavorites();
+          fetchStats();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(favoritesChannel);
+    };
   }, []);
 
   const fetchFavorites = async () => {
     try {
-      const { data, error } = await supabase
+      console.log('Fetching favorites...');
+      
+      // Get favorites with car details
+      const { data: favoritesData, error } = await supabase
         .from('user_favorites')
         .select(`
           id,
@@ -71,14 +98,56 @@ export const UserFavoritesManagement = () => {
         `)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setFavorites(data || []);
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
+
+      console.log('Favorites data:', favoritesData);
+
+      if (!favoritesData || favoritesData.length === 0) {
+        console.log('No favorites found in database');
+        setFavorites([]);
+        setIsLoading(false);
+        return;
+      }
+
+      // Get current user (admin)
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      console.log('Current admin user:', currentUser?.email);
+
+      // Try to get user emails from auth.users
+      // We'll query the profiles table or use RPC to get emails
+      const enrichedFavorites = await Promise.all(
+        favoritesData.map(async (fav) => {
+          try {
+            // Try to get email using a custom RPC function
+            const { data: emailData } = await supabase
+              .rpc('get_user_email', { user_id_param: fav.user_id })
+              .single();
+            
+            return {
+              ...fav,
+              user_email: emailData?.email || `User ${fav.user_id.slice(0, 8)}`
+            };
+          } catch (err) {
+            console.log('Could not fetch email for user:', fav.user_id);
+            return {
+              ...fav,
+              user_email: `User ${fav.user_id.slice(0, 8)}`
+            };
+          }
+        })
+      );
+
+      console.log('Enriched favorites:', enrichedFavorites);
+      setFavorites(enrichedFavorites);
     } catch (error) {
       console.error('Error fetching favorites:', error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to load user favorites.",
+        description: "Failed to load user favorites. Check console for details.",
       });
     } finally {
       setIsLoading(false);
@@ -274,15 +343,22 @@ export const UserFavoritesManagement = () => {
                     
                     <div className="mt-3 pt-3 border-t">
                       <div className="flex justify-between items-center text-sm">
-                        <div>
-                          <p className="font-medium">User ID:</p>
-                          <p className="text-gray-500 text-xs">
-                            {favorite.user_id}
+                        <div className="flex-1">
+                          <p className="font-medium text-gray-700">User:</p>
+                          <p className="text-primary font-medium">
+                            {favorite.user_email || 'Unknown'}
+                          </p>
+                          <p className="text-gray-400 text-xs mt-1">
+                            ID: {favorite.user_id.slice(0, 8)}...
                           </p>
                         </div>
                         <div className="text-right">
-                          <p className="text-gray-500">
+                          <p className="text-xs text-gray-500">Added on</p>
+                          <p className="text-sm font-medium text-gray-700">
                             {new Date(favorite.created_at).toLocaleDateString()}
+                          </p>
+                          <p className="text-xs text-gray-400">
+                            {new Date(favorite.created_at).toLocaleTimeString()}
                           </p>
                         </div>
                       </div>

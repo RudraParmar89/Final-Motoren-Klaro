@@ -63,9 +63,9 @@ const Navbar = () => {
           <div className="flex-shrink-0">
             <Link to="/">
               <img 
-                src={isScrolled ? "/lovable-uploads/8933c66d-7d2c-492e-ad0d-65c188eaf5ed.png" : "/lovable-uploads/2d74a0f2-fa7c-454b-a1eb-b62e5eac1b67.png"} 
+                src={isScrolled ? "/lovable-uploads/Screenshot_2025-10-20_014551-removebg-preview.png" : "/lovable-uploads/Screenshot_2025-10-20_015814-removebg-preview.png"} 
                 alt="MotorenKlaro x Navnit Collaboration Logo" 
-                className="h-12 w-auto scale-x-110 scale-90 transition-all duration-300 ease-in-out" 
+                className="h-14 w-auto transition-all duration-300 ease-in-out" 
               />
             </Link>
           </div>
@@ -233,7 +233,7 @@ const Navbar = () => {
                 
                 <NavigationMenuItem>
                   <NavigationMenuLink className={cn(navigationMenuTriggerStyle(), isScrolled ? "text-gray-700 hover:text-gray-900" : "text-gray-100 hover:text-white bg-transparent hover:bg-gray-800")} asChild>
-                    <Link to="/blog">
+                    <Link to="/car-news">
                       Car News
                     </Link>
                   </NavigationMenuLink>
@@ -323,7 +323,7 @@ const Navbar = () => {
           </Link>
           
           
-          <Link to="/blog" className={cn("block px-3 py-1.5 rounded-md text-sm", isScrolled ? "text-gray-700 hover:bg-gray-50" : "text-gray-200 hover:bg-gray-900")} onClick={() => {
+          <Link to="/car-news" className={cn("block px-3 py-1.5 rounded-md text-sm", isScrolled ? "text-gray-700 hover:bg-gray-50" : "text-gray-200 hover:bg-gray-900")} onClick={() => {
             setIsMenuOpen(false);
             window.scrollTo(0, 0);
           }}>

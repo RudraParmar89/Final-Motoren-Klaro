@@ -27,7 +27,7 @@ const Careers = () => {
                 transition={{ duration: 0.5 }} 
                 className="text-4xl font-bold mb-6"
               >
-                Join Our Team
+                Join Navnit Motors
               </motion.h1>
               
               <div className="prose prose-lg max-w-none">
@@ -37,7 +37,7 @@ const Careers = () => {
                   transition={{ duration: 0.5, delay: 0.2 }} 
                   className="text-xl text-gray-600 mb-4"
                 >
-                  We're looking for passionate innovators to help us revolutionize the smart textile industry.
+                  We're looking for passionate automotive enthusiasts to join our team at Navnit Motors, Mumbai's premier BMW dealership.
                 </motion.p>
                 
                 <motion.p
@@ -46,7 +46,7 @@ const Careers = () => {
                   transition={{ duration: 0.5, delay: 0.3 }}
                   className="text-xl text-gray-600 mb-12"
                 >
-                  We welcome both full-time professionals and interns who are eager to contribute to groundbreaking technology.
+                  Join us in delivering exceptional customer experiences and become part of the luxury automotive industry.
                 </motion.p>
                 
                 <motion.div 
@@ -55,20 +55,20 @@ const Careers = () => {
                   transition={{ duration: 0.6 }}
                   className="mb-16"
                 >
-                  <h2 className="text-3xl font-bold mb-6">Why Join WRLDS?</h2>
+                  <h2 className="text-3xl font-bold mb-6">Why Join Navnit Motors?</h2>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                     {[
                       {
-                        title: "Innovation",
-                        description: "Work on cutting-edge technology that's changing multiple industries."
+                        title: "Premium Brand",
+                        description: "Work with BMW, one of the world's most prestigious automotive brands."
                       },
                       {
-                        title: "Impact",
-                        description: "Create solutions that enhance safety, performance, and quality of life."
+                        title: "Career Growth",
+                        description: "Develop your skills in sales, service, and automotive technology with training opportunities."
                       },
                       {
-                        title: "Growth",
-                        description: "Develop your skills in a rapidly expanding field with diverse challenges."
+                        title: "Team Culture",
+                        description: "Join a passionate team dedicated to excellence and customer satisfaction."
                       }
                     ].map((benefit, i) => (
                       <div key={i} className="bg-gray-50 p-6 rounded-lg border border-gray-100 h-full">
@@ -79,34 +79,51 @@ const Careers = () => {
                   </div>
                   
                   <div className="bg-white rounded-xl border border-gray-200 p-8 shadow-sm mt-12">
-                    <h3 className="font-bold text-xl mb-6">Contact Our COO</h3>
+                    <h3 className="font-bold text-xl mb-6">Get in Touch</h3>
                     <div className="bg-white rounded-xl p-6 border border-gray-200">
-                      <div className="flex flex-col items-center text-center">
-                        <img 
-                          src="/lovable-uploads/a9bb9110-964a-43b0-a5ab-7162140cd133.png"
-                          alt="Love Anderberg"
-                          className="w-32 h-32 rounded-full mb-4 object-cover filter grayscale"
-                        />
-                        <h3 className="text-xl font-bold text-gray-900">Love Anderberg</h3>
-                        <p className="text-gray-600 mb-4">COO</p>
-                        <div className="flex flex-col space-y-3">
-                          <a href="mailto:love@wrlds.com" className="flex items-center text-gray-700 hover:text-blue-600">
-                            <Mail className="w-5 h-5 mr-2" />
-                            love@wrlds.com
-                          </a>
-                          <a 
-                            href="https://www.linkedin.com/in/love-anderberg-67549a174/" 
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center text-gray-700 hover:text-blue-600"
-                          >
-                            <Linkedin className="w-5 h-5 mr-2" />
-                            LinkedIn Profile
-                          </a>
-                          <a href="tel:+46760149508" className="flex items-center text-gray-700 hover:text-blue-600">
-                            <Phone className="w-5 h-5 mr-2" />
-                            076-014 95 08
-                          </a>
+                      <div className="space-y-6">
+                        <div>
+                          <h4 className="font-semibold text-lg mb-4">Navnit Motors - Mumbai</h4>
+                          <div className="space-y-3">
+                            <div className="flex items-start">
+                              <Mail className="w-5 h-5 mr-3 text-primary mt-1" />
+                              <div>
+                                <p className="font-medium">Email</p>
+                                <a href="mailto:careers@navnitmotors.com" className="text-gray-600 hover:text-primary">
+                                  careers@navnitmotors.com
+                                </a>
+                              </div>
+                            </div>
+                            <div className="flex items-start">
+                              <Phone className="w-5 h-5 mr-3 text-primary mt-1" />
+                              <div>
+                                <p className="font-medium">Phone</p>
+                                <a href="tel:+912226707000" className="text-gray-600 hover:text-primary">
+                                  +91 22 2670 7000
+                                </a>
+                              </div>
+                            </div>
+                            <div className="flex items-start">
+                              <svg className="w-5 h-5 mr-3 text-primary mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                              </svg>
+                              <div>
+                                <p className="font-medium">Location</p>
+                                <p className="text-gray-600">
+                                  CD Barfiwala Road, Juhu Lane,<br />
+                                  Andheri West, Mumbai,<br />
+                                  Maharashtra 400058
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="pt-6 border-t">
+                          <p className="text-sm text-gray-500">
+                            Send your resume and cover letter to the email above. We'll get back to you within 3-5 business days.
+                          </p>
                         </div>
                       </div>
                     </div>

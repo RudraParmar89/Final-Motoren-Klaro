@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -283,9 +283,12 @@ export const AuthModal = ({ isOpen, onClose }: AuthModalProps) => {
         resetForm();
       }
     }}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md" aria-describedby="auth-modal-description">
         <DialogHeader>
           <DialogTitle>Welcome to Motoren Klaro</DialogTitle>
+          <DialogDescription id="auth-modal-description">
+            Sign in to your account or create a new one to get started.
+          </DialogDescription>
         </DialogHeader>
         
         <Tabs defaultValue="signin" className="w-full">

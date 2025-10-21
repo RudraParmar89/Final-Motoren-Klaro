@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -103,9 +103,12 @@ export const FavoritesModal = ({ isOpen, onClose, user }: FavoritesModalProps) =
   if (!user) {
     return (
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md" aria-describedby="favorites-login-description">
           <DialogHeader>
             <DialogTitle>My Favorite Cars</DialogTitle>
+            <DialogDescription id="favorites-login-description">
+              Sign in to view your favorite cars.
+            </DialogDescription>
           </DialogHeader>
           <div className="text-center py-8">
             <Heart className="mx-auto h-12 w-12 text-gray-400 mb-4" />
@@ -118,9 +121,12 @@ export const FavoritesModal = ({ isOpen, onClose, user }: FavoritesModalProps) =
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
+      <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col" aria-describedby="favorites-modal-description">
         <DialogHeader>
           <DialogTitle>My Favorite Cars</DialogTitle>
+          <DialogDescription id="favorites-modal-description">
+            Manage your collection of favorite cars.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto">

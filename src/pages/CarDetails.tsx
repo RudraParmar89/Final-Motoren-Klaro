@@ -42,6 +42,7 @@ interface Car {
   features?: string[];
   dealer_name?: string;
   dealer_contact?: string;
+  youtube_url?: string;
 }
 
 const CarDetails = () => {
@@ -390,6 +391,32 @@ const CarDetails = () => {
           <div className="mb-8">
             <EMICalculator carPrice={car.price} />
           </div>
+
+          {/* YouTube Video Section */}
+          {car.youtube_url && (
+            <Card className="mb-8">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Star className="w-5 h-5 mr-2 text-red-600" />
+                  Video Review
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="aspect-video w-full">
+                  <iframe
+                    width="100%"
+                    height="100%"
+                    src={car.youtube_url}
+                    title={`${car.make} ${car.model} Video Review`}
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    className="rounded-lg"
+                  ></iframe>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Detailed Specifications */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

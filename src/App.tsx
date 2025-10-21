@@ -17,6 +17,8 @@ import Blog from "./pages/Blog";
 import BlogPostDetail from "./pages/BlogPostDetail";
 import Admin from "./pages/Admin";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
+import CarNewsList from "./pages/CarNewsList";
+import CarNewsDetail from "./pages/CarNewsDetail";
 
 const App = () => {
   const [queryClient] = useState(() => new QueryClient());
@@ -33,6 +35,8 @@ const App = () => {
             <Route path="/car/:id" element={<CarDetails />} />
             <Route path="/car-details/:id" element={<CarDetails />} />
             <Route path="/about" element={<About />} />
+            <Route path="/car-news" element={<CarNewsList />} />
+            <Route path="/car-news/:slug" element={<CarNewsDetail />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/careers" element={<Careers />} />
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
