@@ -182,7 +182,7 @@ const InteractiveImage = ({ src, alt, className }: InteractiveImageProps) => {
           src={src}
           alt={alt}
           className={cn(
-            "w-full transition-transform duration-200",
+            "w-full h-full object-cover transition-transform duration-200",
             isDragging && "transition-none"
           )}
           style={{

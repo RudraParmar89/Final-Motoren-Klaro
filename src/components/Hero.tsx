@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import ComparisonSection from "./ComparisonSection";
 import BrandLogos from '@/components/BrandLogos';
 
+
 const Hero = () => {
   const isMobile = useIsMobile();
   const containerVariants = {
