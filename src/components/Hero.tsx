@@ -55,7 +55,7 @@ const Hero = () => {
             playsInline 
             preload="metadata"
             className={`w-full h-full object-cover opacity-70 grayscale ${isMobile ? 'object-right' : 'object-center'}`}
-            poster="/lovable-uploads/4bfa0d71-3ed2-4693-90b6-35142468907f.png"
+            poster="\public\lovable-uploads\New Poster.jpg"
           >
             <source src="/lovable-uploads/Welcome To First Motors ｜ Best Car Showroom In The World ｜ 4K Quality (1).mp4" type="video/mp4" />
             {/* Fallback image if video fails to load */}
